@@ -46,3 +46,7 @@ docs/instructions/Roadmap.md
 .cursorrules
 *.md
 .qodo
+
+# Keep AI-assistant context docs tracked despite the blanket *.md ignore above
+!CLAUDE.md
+!docs/BUILD_LOG.md
