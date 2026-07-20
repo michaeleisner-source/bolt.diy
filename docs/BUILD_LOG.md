@@ -14,6 +14,27 @@ Next up: ...
 
 ---
 
+## 2026-07-20 — Session 2 (summary)
+**Did:** Diagnosed the Railway streaming-chat bug (`Custom error: internal error; reference = ...`
+= Cloudflare's `workerd` emulator in a plain container). Moved the platform to **Cloudflare Pages**
+via Git integration (auto-deploy from `main`); got past the GitHub-App install error using the
+**Pages** create flow; went **live at `bolt-diy-8bq.pages.dev`**. Fixed first-chat issues: added
+`ANTHROPIC_API_KEY` as a Cloudflare **Production secret** (so the live model list loads) and set the
+app default model to **`claude-sonnet-4-5`** (was a retired Claude 3.5), refreshing the stale static
+fallback list. Adopted the **full canonical knowledge base** into the repo and reconciled it to
+reality. **Merged everything to `main`** → live.
+
+**Decided:** D-008 — Cloudflare Pages over Railway (host).
+
+**Blocked on:** nothing. *(Assistant build env is firewalled from Cloudflare/pages.dev, so deploys
+must run on Cloudflare's own servers via Git integration — which is how it's set up.)*
+
+**Next up:** **Stage 2 — multi-tenant skeleton** (auth via Supabase Auth → per-user encrypted keys
+→ per-user projects + a Lovable-style projects dashboard). Housekeeping: retire old Railway
+services; confirm Anthropic spending limit is set.
+
+---
+
 ## 2026-07-20 (later) — Adopted the canonical knowledge base + reconciled to reality
 - Michael provided the real doc set (README, CLAUDE, DECISIONS, CUSTOMER_EXPLAINER, ROADMAP).
   Adopted them as the source of truth in the repo and **reconciled to what's actually done**:
