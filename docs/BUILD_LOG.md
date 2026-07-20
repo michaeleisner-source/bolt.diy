@@ -87,7 +87,28 @@ Repo is already Pages-ready (`wrangler.toml` with `pages_build_output_dir`,
 4. Deploy, then test a chat prompt on the `*.pages.dev` URL.
 5. Once verified: optionally attach a custom domain and decommission the Railway service.
 
+### 2026-07-20 (later) — Direct-upload from the assistant's build env is blocked
+- Tried **Plan B** (assistant builds + `wrangler pages deploy` from this environment).
+  - ✅ Installed deps and built the app successfully here. (Had to temporarily strip
+    Electron desktop-build tooling because this env's egress policy blocks
+    `codeload.github.com`, which hosts `@electron/node-gyp`. `package.json` +
+    `pnpm-lock.yaml` were restored afterward — repo left pristine. App code imports no
+    Electron packages, so the web build is unaffected.)
+  - ❌ **Deploy blocked:** this environment's egress policy also blocks `api.cloudflare.com`
+    (proxy returns 403 CONNECT). Per policy we do not route around it. So the assistant
+    **cannot** push the deploy from here. The upload must run somewhere allowed to reach
+    Cloudflare.
+- **Two viable paths that avoid this env entirely:**
+  1. **Cloudflare Pages Git integration** (recommended end-state): Cloudflare pulls the
+     repo and builds/deploys on *their* servers — unaffected by this firewall — and
+     auto-deploys on every push. Blocker to clear: the earlier "unable to install on
+     GitHub account" error (fix = uninstall/reinstall the Cloudflare GitHub App).
+  2. **Local `wrangler` deploy from Michael's own computer**: `wrangler login` (browser)
+     then `pnpm run deploy`. No GitHub App needed; more terminal steps.
+
 ### Status / next step
-- ▶️ **In progress:** walking Michael through Cloudflare Pages setup, one step at a time.
+- ⏳ **Awaiting Michael's choice** between Git integration (path 1) and local wrangler
+  deploy (path 2). Token he generated is unusable from this env; keep it for local
+  wrangler use or revoke it.
 - Docs `CLAUDE.md` + `docs/BUILD_LOG.md` live on branch
   `claude/bolt-chat-request-railway-8t0y4x`.
