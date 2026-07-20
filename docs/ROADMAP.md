@@ -1,72 +1,58 @@
-# ROADMAP — Making bolt.diy feel like Lovable
+# Roadmap
 
-> Goal: turn this bolt.diy fork into a Lovable-style product — **log in, see all your
-> projects, pick one to continue or start a new one** — used by Michael first, built so it
-> can serve other customers later. Companion to `PROJECT_HANDOFF.md` (the venture) and
-> `BUILD_LOG.md` (dated timeline). Work **one phase at a time**; update BUILD_LOG as we go.
+Pace: one step at a time. Do a step, confirm it works, log it in BUILD_LOG.md, then move on.
+`[ ]` = not started, `[~]` = in progress, `[x]` = done.
 
-## Where we are today (baseline)
-- ✅ Live on Cloudflare Pages, chat builds apps, auto-deploys on push to `main`.
-- bolt.diy **already** saves every project and has a slide-out **history sidebar**
-  (`app/components/sidebar/Menu.client.tsx`) — but projects are stored **in the browser only**
-  (IndexedDB, `app/lib/persistence/`), and there is **no login / no accounts**.
-
-## The gap vs. Lovable
-| Lovable has | bolt.diy today |
-|---|---|
-| Log in from any device | No accounts at all |
-| Cloud-stored projects per user | Projects saved in this browser only |
-| A projects **dashboard** (grid of cards) | A slide-out history sidebar |
-| Open a project → builder | ✅ already works |
+> **Status note (2026-07-20):** we are further along than the original plan and the host changed.
+> Stage 0 and Stage 1 are essentially done, and the platform host is **Cloudflare Pages** (not
+> Railway — see DECISIONS D-008). The Lovable-style **projects dashboard** the user wants lives
+> naturally inside **Stage 2** (per-user projects), so it is folded in there.
 
 ---
 
-## Phase 0 — Foundation & housekeeping (quick wins)
-Small, low-risk items that stabilize the base before we build.
-- [ ] **Default model → Sonnet 4.5** (edit `DEFAULT_MODEL` in `app/utils/constants.ts` +
-      refresh stale `staticModels` in `app/lib/modules/llm/providers/anthropic.ts`) so a
-      fresh load never hits the retired-model error.
-- [ ] **Retire Railway** (stop paying for the old broken services).
-- [ ] **Anthropic spend limit** set / auto-reload OFF.
-- [ ] **Brand name** chosen (replace "bolt.diy"/"BoltKey" placeholders in the UI).
-- [ ] Optional: **custom domain** on Cloudflare Pages.
+## Stage 0 — Foundations (repo + docs + running)  ✅ essentially done
 
-## Phase 1 — Make it *feel* like Lovable (single-user, no login yet)
-Goal: opening the site lands on a **Projects dashboard** (grid of your projects + "New
-Project"), styled like Lovable — instead of a blank chat.
-- [ ] Build a **dashboard home screen** that lists projects from the existing local history
-      (reuse `app/lib/persistence` + the sidebar's data).
-- [ ] Project **cards**: name, last-edited, open button; a **New Project** button.
-- [ ] Light **rebranding / visual polish** toward the Lovable look.
-- **Why first:** delivers the Lovable *experience* fast, front-end only, **no risky backend**.
-- **Limitation (accepted for now):** projects still live in the browser — fine for one
-  person on one machine.
+- [x] 0.1  Set up this knowledge base (these files)
+- [x] 0.2  Fork `stackblitz-labs/bolt.diy` → `michaeleisner-source/bolt.diy`
+- [x] 0.3  Add `/docs` + `CLAUDE.md` + `README.md` to the fork
+- [x] 0.5  App builds and runs (built successfully; live on Cloudflare — see Stage 1)
+- [x] 0.6  Anthropic API key added, first test build done (you = customer #1)
+- [ ]  0.7  Put a **spending limit** on the Anthropic API account  ← confirm this is set
+- [ ]  0.8  Set **Sonnet 4.5** as the app default model (`DEFAULT_MODEL` in
+      `app/utils/constants.ts` + refresh stale `staticModels` in the Anthropic provider) so a
+      fresh load never hits the retired-model error
 
-## Phase 2 — Real accounts + cloud projects (the product backbone)
-Goal: log in anywhere and your projects follow you.
-- [ ] **Authentication** (login/signup). Recommended: **Supabase Auth** (Supabase is already
-      partially wired into bolt.diy, so it pairs naturally with the database).
-- [ ] **Cloud database** (Supabase Postgres) storing projects **per user** (files + chat
-      history), replacing/backing the browser-only storage.
-- [ ] Dashboard reads/writes the **cloud**, keyed to the logged-in user.
-- **Biggest lift** — break into small sub-steps; each shippable on its own.
+## Stage 1 — Host it (log in from anywhere)  ✅ done (on Cloudflare Pages)
 
-## Phase 3 — Sellable to others (multi-tenant)
-Only after real people say they'd pay.
-- [ ] **Per-user API keys stored encrypted server-side**, never exposed to the browser.
-- [ ] **Onboarding flow** — guide a new customer to add their key + set a spend limit.
-- [ ] **Billing** (e.g. Stripe) for the setup fee / subscription.
-- [ ] ⚠️ **WebContainer commercial license** from StackBlitz — **legally required before
-      charging customers** (our own locked-in rule). Resolve, or swap the runtime.
-- [ ] Full branding / polish.
+- [x] 1.1  Host chosen: **Cloudflare Pages** (moved off Railway; fixed the streaming-chat bug)
+- [x] 1.2  GitHub fork connected; **auto-deploy from `main`** enabled
+- [x] 1.3  Live + reachable at `bolt-diy-8bq.pages.dev` (works from any device/browser)
+- [x] 1.4  `main` = production; changes on a branch then merge
+- [ ]  1.5  Housekeeping: **retire old Railway services** (stop paying); optional custom domain
+
+## Stage 2 — Multi-tenant skeleton (the "assume customers" layer)  ← WE ARE HERE
+
+This is also where the **Lovable-style experience** gets built: log in → a **projects dashboard**
+(grid of your projects) → open one or start new. bolt.diy already saves projects and has a history
+sidebar, but only in the browser and with no login; Stage 2 makes it real.
+- [ ]  2.1  Add **auth** (Supabase Auth or Clerk) — login/signup
+- [ ]  2.2  Per-user **encrypted** API key storage (server-side only, never to the browser)
+- [ ]  2.3  Per-user **project isolation** + a **projects dashboard** home screen
+- [ ]  2.4  Connect a customer's own Vercel/Netlify for their deploys
+
+## Stage 3 — Productize & sell
+
+- [ ]  3.1  Onboarding flow: guided "how to get your API key in 3 clicks"
+- [ ]  3.2  Polish `CUSTOMER_EXPLAINER.md` into real onboarding/sales material
+- [ ]  3.3  Resolve the runtime: **WebContainer commercial license** or own sandbox
+- [ ]  3.4  Validate with 3–5 real people BEFORE building billing
+- [ ]  3.5  Billing (Stripe), only after validation
+- [ ]  3.6  Domain + brand name (replace "bolt.diy"/"BoltKey" placeholder)
 
 ---
 
-## Recommended order
-1. **Phase 0 quick wins** (start with the Sonnet 4.5 default — small, immediate).
-2. **Phase 1 dashboard** — the first real "feels like Lovable" build.
-3. Plan **Phase 2** carefully once Phase 1 is in your hands.
+## Parallel / ongoing
 
-## Decision log for this roadmap
-- *(add dated decisions here as we make them — e.g. chosen auth provider, DB schema, brand
-  name — so the plan and the reasons stay in the repo, not in chat.)*
+- [ ] Register a domain and lock in a brand name early
+- [ ] Keep BUILD_LOG.md updated every session (the save point)
+- [ ] Keep a demo of your own real project (built in the platform) as the sales asset

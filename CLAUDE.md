@@ -1,79 +1,67 @@
-# CLAUDE.md — Project Context for AI Assistants
+# CLAUDE.md — project context (auto-loaded by Claude Code)
 
-> Read this first. It captures **what this project is**, **who it's for**, and **how we work together** so context is never lost between sessions.
+> This file is the single source of truth for what this project is and where it stands.
+> If you are an AI assistant resuming work: read this, then read `docs/BUILD_LOG.md` for the
+> latest session, then continue. Do not assume anything not written here or in the docs.
 
-## What this project is
+## What we are building
 
-This is a fork of **bolt.diy** (the open-source, community fork of StackBlitz's bolt.new)
-being turned into a **hosted, bring-your-own-key (BYOK) AI app builder** — a
-Lovable-style "describe it and it builds it" platform.
+A bring-your-own-key (BYOK) AI app builder — a Lovable/Bolt-style "describe it and it builds it"
+platform where each user supplies their own AI API key. Built on a fork of **bolt.diy**.
+The seller's value is the setup + managed hosting, not the AI. Michael (Matis) is customer #1,
+but the infrastructure is built multi-tenant from the start so it can serve others.
 
-- **Owner:** Michael (michaeleisner@gmail.com). Michael is **customer #1**.
-- **Long-term goal:** grow this from "just me" into a product that Michael can set up
-  and run for other users.
-- **Today's reality:** single-user (Michael), used to validate the idea and keep building.
+## How to work with Michael (important)
 
-## Who Michael is (how to work with him)
+- **Semi-technical.** Explain in **plain language**; avoid unexplained jargon.
+- **One step at a time.** Give a single step, wait until he confirms it's done, then the next.
+  Do NOT batch a pile of changes together.
+- **Explain what + why before any change**, and let him choose before editing. Reads
+  (opening/searching files) are free; changes pause for approval.
+- When giving options, give a clear **recommendation**, not just a list.
 
-- **Semi-technical.** Explain in **plain language**, avoid unexplained jargon.
-- **Go step by step, ONE step at a time.** Do **not** batch a pile of changes together.
-- **Explain what and why before making any change**, and let Michael choose before
-  editing anything. Reads (opening/searching files) are fine to do freely; changes pause
-  for approval.
-- When giving options, give a clear recommendation — don't just list choices.
+## Guiding principles
 
-## The stack (as deployed today)
+- **Customer-shaped architecture, thin scope.** Build multi-user foundations now; do NOT build
+  billing, team seats, or fancy features until a second real person asks to pay.
+- **State lives in the repo, not in chat.** Every decision goes in `docs/DECISIONS.md`; every
+  session ends with an entry in `docs/BUILD_LOG.md`.
+- **The platform code and the customer's project code are separate trees.** Never mix them.
+- **Never expose a stored API key to the browser.** Keys are handled server-side only.
 
-- **App:** bolt.diy — a Remix app **built to target Cloudflare Pages** (uses
-  `@remix-run/cloudflare`, `functions/[[path]].ts`, `wrangler.toml`).
-- **AI:** Vercel AI SDK (`ai`, `@ai-sdk/*`). Chat streams Server-Sent Events (SSE) from
-  the LLM back to the browser. Current model: **Anthropic Sonnet**. Keys are BYOK
-  (entered in the UI and/or set as server env vars).
-- **Hosting (current):** **Cloudflare Pages** via **Git integration** — Cloudflare builds
-  and deploys automatically on every push to `main`. Live at **`bolt-diy-8bq.pages.dev`**.
-  - Build config: framework preset `None`, build command `pnpm run build`, output dir
-    `build/client`, build env var `NODE_VERSION=22`.
-  - `ANTHROPIC_API_KEY` is set as a **Production secret** in the Pages project (Settings →
-    Variables and Secrets). This is what makes the live model list load + chat work.
-- **Hosting (old, being retired):** Railway, running `ghcr.io/stackblitz-labs/bolt.diy:latest`
-  via `pnpm run dockerstart` → `wrangler pages dev` (the `workerd` emulator). That emulator
-  is what broke streaming chat; moving to real Cloudflare Pages fixed it.
+## The stack (see docs/ARCHITECTURE.md for detail)
 
-## Key architecture facts worth remembering
+- Platform UI + agent: our fork of **bolt.diy** (MIT code) — this repo
+- AI brain: **Anthropic (or other) API key** — brought by the user, billed to the user
+  (current model: **Claude Sonnet 4.5**)
+- Runtime / live preview: **StackBlitz WebContainers** — free for personal use, **commercial
+  license required before reselling** (open item, see DECISIONS)
+- Platform data (accounts, encrypted keys, project metadata): **Supabase**
+- Customer code storage: **GitHub** (customer's account)
+- Customer deployed sites: **Vercel / Netlify** (customer's account)
+- **Platform hosting: Cloudflare Pages** — live at **`bolt-diy-8bq.pages.dev`**, auto-deploys
+  from `main`. (We moved here from Railway; the Railway prebuilt image ran the app through
+  Cloudflare's `wrangler pages dev` / `workerd` emulator, which crashed the streaming chat.
+  On real Cloudflare Pages that bug is gone. See DECISIONS D-008 + BUILD_LOG.)
 
-- **Two different runtimes depending on how it's started:**
-  - `pnpm run dev` (`remix vite:dev`) → app code runs in **plain Node.js** (Cloudflare
-    bindings are *emulated* via `remixCloudflareDevProxy`). Streaming chat works reliably.
-  - `pnpm run dockerstart` (`wrangler pages dev`) → app code runs inside **`workerd`**,
-    Cloudflare's Workers runtime emulator. This is what the Railway production image uses.
-- The chat endpoint is `app/routes/api.chat.ts`. Its `onError` handler wraps any failure
-  as `"Custom error: <message>"`. So a browser error of
-  `Custom error: internal error; reference = ...` means the underlying message was
-  `internal error; reference = ...` — which is a **`workerd` runtime internal error**.
-- `bindings.sh` turns server env vars (listed in `worker-configuration.d.ts`) into
-  `--binding NAME=VALUE` flags for wrangler, so `ANTHROPIC_API_KEY` from Railway does
-  reach the app. (Env plumbing is fine; the failure is the runtime, not a missing key.)
+## Where the code lives
 
-## Status (as of 2026-07-20): ✅ RESOLVED
+- Source of truth: this **GitHub repo** (`michaeleisner-source/bolt.diy`, our bolt.diy fork)
+- Editing: local clone on Michael's PC, or Claude Code pointed at this repo
+- Running (live platform): Cloudflare Pages, auto-deploying from `main` on push
+- Update loop: edit → commit → push → Cloudflare auto-builds → live. Revert = check out an earlier commit.
+- Convention: `main` = production. Make changes on a branch, test, then merge.
+- Active working branch this session: `claude/bolt-chat-request-railway-8t0y4x`.
 
-The original bug — chat failing with `Custom error: internal error; reference = ...` — was
-the Railway/`workerd` emulator choking on the streaming AI request. **Fixed by moving to
-Cloudflare Pages** (where `workerd` runs natively). bolt.diy is now live at
-`bolt-diy-8bq.pages.dev` and chat builds apps successfully.
+## Conventions
 
-Two smaller issues surfaced and were fixed during the first working chat: a **retired
-default Anthropic model** and the **API key needing to be server-side** (added as a Pages
-secret) so the live model list loads. See `docs/BUILD_LOG.md` for the full story.
+- Small commits, clear messages.
+- Document a decision the moment it's made (DECISIONS.md), don't wait.
+- Put a spending limit on the Anthropic API account so a runaway loop can't drain it.
 
-**Known nice-to-have (not blocking):** the app still *defaults* to a retired model
-(`DEFAULT_MODEL` in `app/utils/constants.ts`) and ships stale `staticModels` in
-`app/lib/modules/llm/providers/anthropic.ts`. Worth updating to current model IDs so
-first-load never errors — pending Michael's go-ahead.
+## Current stage
 
-## Working agreements / conventions
-
-- **Branch:** develop on `claude/bolt-chat-request-railway-8t0y4x`. Commit with clear
-  messages; push when a unit of work is complete. Never push to another branch without
-  explicit permission. Do not open a PR unless Michael asks.
-- **Keep these docs current.** After any meaningful decision or change, update
-  `docs/BUILD_LOG.md` (and this file if the project's shape changes).
+**Stage 0 (foundations) and Stage 1 (hosting) are essentially DONE** — the fork is live on
+Cloudflare Pages and chat builds apps. **Next is Stage 2 — the multi-tenant skeleton
+(auth + per-user encrypted keys + per-user project isolation).** See `docs/ROADMAP.md` for the
+exact next step.

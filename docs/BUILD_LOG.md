@@ -6,6 +6,20 @@ Companion to `CLAUDE.md` (which holds the stable "what/who/how"). This file hold
 
 ---
 
+## 2026-07-20 (later) — Adopted the canonical knowledge base + reconciled to reality
+- Michael provided the real doc set (README, CLAUDE, DECISIONS, CUSTOMER_EXPLAINER, ROADMAP).
+  Adopted them as the source of truth in the repo and **reconciled to what's actually done**:
+  - Host is **Cloudflare Pages**, not Railway (recorded as **DECISIONS D-008**).
+  - Stages 0 (foundations) + 1 (hosting) marked **done**; **Stage 2 (multi-tenant) is next**.
+  - The Lovable-style **projects dashboard** folded into Stage 2 (per-user projects).
+- Created **`docs/ARCHITECTURE.md`** (referenced by the docs but missing) from the real stack.
+- Preserved bolt.diy's original README at **`docs/UPSTREAM_bolt.diy_README.md`**; root `README.md`
+  is now the product overview.
+- Confirmed the "next" near-term items: set **Sonnet 4.5** as default model, confirm Anthropic
+  **spend limit**, retire old **Railway** services.
+- **Decision still pending from Michael:** sequencing for Stage 2 (auth + per-user data) — and
+  whether to knock out the Sonnet-4.5 default first (needs the exact model id).
+
 ## 2026-07-20 — Chat request fails on Railway ("Custom error: internal error; reference = ...")
 
 ### Symptom
