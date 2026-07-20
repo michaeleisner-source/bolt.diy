@@ -1,8 +1,16 @@
-# BUILD LOG
+# Build Log
 
-A running journal of what we're building, what we decided, and why. Newest entry on top.
-Companion to `CLAUDE.md` (which holds the stable "what/who/how"). This file holds the
-**timeline**: problems, investigations, decisions, and next steps.
+Newest at top. End every work session with an entry here — it is the save point that lets any
+fresh session resume without losing context. Companion to `CLAUDE.md` (stable "what/who/how").
+
+Template:
+```
+## [date] — Session N
+Did: ...
+Decided: ... (also add to DECISIONS.md)
+Blocked on: ...
+Next up: ...
+```
 
 ---
 
@@ -159,3 +167,20 @@ Repo is already Pages-ready (`wrangler.toml` with `pages_build_output_dir`,
 ### Status
 - ✅ **DONE:** bolt.diy is live on Cloudflare Pages and chat builds apps. Docs live on
   branch `claude/bolt-chat-request-railway-8t0y4x`.
+
+---
+
+## Planning session — Session 1 (earliest entry)
+**Did:** Locked the strategy and set up the knowledge base. Chose to fork bolt.diy, build BYOK,
+build multi-tenant from day one with Michael as customer #1, and keep all state in the repo (not in
+chat) with heavy work done in Claude Code.
+
+**Decided:** See DECISIONS.md D-001 through D-007. Key ones: BYOK is the model; the product is the
+setup/managed service; bolt.diy fork is the foundation; WebContainer needs a commercial license at
+resale; state lives in the repo.
+
+**Blocked on:** nothing.
+
+**Next up:** Stage 0.2 — create/confirm a GitHub account and fork `stackblitz-labs/bolt.diy` into
+your own repo, then drop these docs into it. *(Since done — see the newer entries above: forked,
+deployed to Cloudflare Pages, chat working.)*

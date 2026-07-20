@@ -1,70 +1,83 @@
 # Architecture
 
-How the platform is put together, the layers, where code lives, and who pays for what.
-Companion to `CLAUDE.md` and `DECISIONS.md`.
+## The core idea
 
-## The two layers (do not mix them)
+Two completely separate things share the screen and must never be confused:
 
-1. **The platform** — *this repo*, our fork of bolt.diy. The thing a user logs into and builds
-   inside. We host it. Adding new **AI providers** happens here.
-2. **The customer's project** — whatever the user builds *inside* the platform. Its code lives on
-   the **customer's** GitHub; it deploys to the **customer's** Vercel/Netlify; any tools it uses
-   (Supabase, Firecrawl, Resend, …) use **that project's own** keys. Never added to the platform.
+1. **The platform** — the builder app customers log into (this repo, our bolt.diy fork).
+2. **The customer's project** — the site/app a customer builds inside the platform. It runs in
+   the customer's browser (WebContainers) and deploys to the customer's own hosting.
 
-This split is the whole cost model: our inference cost is zero (BYOK), and the customer owns their
-code, hosting, and keys.
+Keeping these separate is the entire cost model: everything variable sits on the customer's
+accounts, so our price can be a flat fee with almost no cost of goods.
 
-## The platform stack
+## The six layers, and who pays for each
 
-| Concern | Choice | Notes |
-| --- | --- | --- |
-| App framework | **Remix** targeting **Cloudflare Pages** | `@remix-run/cloudflare`, `functions/[[path]].ts`, `wrangler.toml` |
-| Hosting | **Cloudflare Pages** (Git integration) | auto-deploy from `main`; live at `bolt-diy-8bq.pages.dev`. See D-008 |
-| AI | **Vercel AI SDK** (`ai`, `@ai-sdk/*`) | streams SSE from the model to the browser |
-| Model (default) | **Anthropic Claude Sonnet 4.5** | BYOK — user's key, billed to the user |
-| Live preview / runtime | **StackBlitz WebContainers** | runs the built app in-browser. Commercial license needed to resell — D-005 |
-| Platform data (accounts, encrypted keys, project metadata) | **Supabase** *(planned, Stage 2)* | not yet wired for platform auth; bolt.diy's existing Supabase hooks are for *customer projects* |
-| Customer code | **GitHub** (customer's account) | |
-| Customer live sites | **Vercel / Netlify** (customer's account) | one-click deploy from the builder |
+| # | Layer | What it is | Whose account / who pays |
+| --- | --- | --- | --- |
+| 1 | Builder UI + AI agent | The platform itself | **Us** (this repo) — the thing we brand and sell |
+| 2 | AI brain | Claude / GPT / etc. via API | **Customer's API key**, billed per token to them |
+| 3 | Runtime / live preview | StackBlitz WebContainers (runs in browser) | Free for personal use; **we license it for resale** (or swap for our own sandbox) |
+| 4 | Code storage | Git repo of the customer's project | **Customer's GitHub** |
+| 5 | Deployed site hosting | Where the finished live site runs | **Customer's Vercel / Netlify** |
+| 6 | Project database | If the built app needs one | **Customer's Supabase** |
 
-## How a chat request flows (why the host mattered)
+Layers 2, 4, 5, 6 are bring-your-own. The only cost that is truly ours is Layer 3 at resale —
+which is why the WebContainer license (or building our own sandbox) is the one real infrastructure
+cost of the business.
 
-Browser → `app/routes/api.chat.ts` (`action`) → `streamText` (AI SDK) → Anthropic API →
-tokens stream back as SSE → browser renders files/preview. This streaming path is what broke under
-Railway's `wrangler pages dev` (`workerd` emulator) with `Custom error: internal error; reference =
-...`. On real Cloudflare Pages the same code runs fine (D-008). The `onError` handler in that route
-wraps any failure as `Custom error: <message>` — so that prefix in the UI means "read the rest of
-the message for the real cause."
+## Where OUR platform code lives (4 places, 4 jobs)
 
-## Runtimes: dev vs production (worth remembering)
+- **Source of truth →** GitHub repo (our bolt.diy fork). This is where the code *is*.
+- **Editing →** local clone on the PC, or Claude Code pointed at the repo.
+- **Running →** **Cloudflare Pages**, auto-deploying from `main` on push (live at
+  `bolt-diy-8bq.pages.dev`). *(Originally planned for Railway/Render/Coolify; moved to Cloudflare
+  Pages because Railway's image ran the app in the `workerd` emulator, which crashed streaming
+  chat — see DECISIONS D-008.)*
+- **Platform data →** Supabase (accounts, encrypted customer keys, project metadata). This is
+  state, not code — deliberately separate from the repo. *(Planned for Stage 2; not wired yet.)*
 
-- `pnpm run dev` (`remix vite:dev`) → app runs in **plain Node.js** (CF bindings emulated via
-  `remixCloudflareDevProxy`). Streaming works.
-- `wrangler pages dev` (the old Railway image's `dockerstart`) → app runs in **`workerd`**. This is
-  what broke streaming in a plain container.
-- **Cloudflare Pages (production)** → `workerd` running natively on Cloudflare. Works.
+## The update loop
 
-## Keys & secrets
+```
+edit (locally or via Claude Code)  ->  commit  ->  push to GitHub
+      ->  Cloudflare auto-builds & deploys  ->  live in ~1-2 min
+```
 
-- **Today (single-user):** `ANTHROPIC_API_KEY` is a **Cloudflare Pages Production secret** (server
-  side), which also lets the live model list load. Users can alternatively enter a key in the UI
-  (stored in the browser) — the BYOK design.
-- **Stage 2 (multi-tenant):** each user's key must be stored **encrypted, server-side only, never
-  exposed to the browser** (CLAUDE.md core rule). That's a Supabase-backed change, not built yet.
+- History + revert is just git: every update is a commit; rolling back is checking out an earlier one.
+- `main` = production. Changes go on a branch, get tested, then merge. Cloudflare gives a preview URL
+  per branch so you never edit the live thing while a customer is mid-build.
 
-## Where the code lives / update loop
+## Multi-tenant additions (the "assume customers" work)
 
-Source of truth = this GitHub repo. Edit → commit → push to a branch → merge to `main` →
-Cloudflare auto-builds → live. Revert = check out an earlier commit. `main` = production.
+A fresh bolt.diy fork is single-user. To serve others we add:
+- **Auth** (Supabase Auth or Clerk) — login and per-user isolation
+- **Per-user encrypted API key storage** — server-side only, never sent to the browser
+- **Per-user deploy target** — connect the customer's Vercel
+- **Billing** (Stripe) — added last, only after someone says yes
 
-## Build config (Cloudflare Pages)
+This wrapper is the custom engineering we own. It is also literally "the scaffolding" that is the
+product.
 
-Framework preset `None`; build command `pnpm run build`; output dir `build/client`; build env
-`NODE_VERSION=22`. `wrangler.toml` supplies `compatibility_flags = ["nodejs_compat"]` and the
-compatibility date, which Cloudflare Pages honors because `pages_build_output_dir` is set.
+---
 
-## Open architectural items
+## Current implementation notes (2026-07-20)
 
-- **WebContainer commercial license** (or swap to E2B/Daytona/Fly) before reselling — D-005.
-- **Supabase for platform auth + per-user encrypted keys + project isolation** — Stage 2.
-- Retire Railway once nothing depends on it — D-008.
+Concrete facts about how the platform actually runs today, so the conceptual model above stays
+honest:
+
+- **Host:** Cloudflare Pages (Git integration, auto-deploy from `main`). Build config: framework
+  preset `None`, build command `pnpm run build`, output dir `build/client`, build env
+  `NODE_VERSION=22`. `wrangler.toml` provides `compatibility_flags = ["nodejs_compat"]` + a
+  compatibility date, which Pages honors because `pages_build_output_dir` is set.
+- **Chat flow:** browser → `app/routes/api.chat.ts` (`action`) → `streamText` (Vercel AI SDK) →
+  Anthropic API → SSE tokens stream back → files/preview render. Its `onError` wraps failures as
+  `Custom error: <message>` (so that prefix means "read the rest for the real cause").
+- **Runtime lesson (why the host mattered):** `pnpm run dev` runs the app in **plain Node.js**
+  (bindings emulated) and streaming works; the old Railway image's `wrangler pages dev` ran it in
+  the **`workerd` emulator** and streaming crashed; **Cloudflare Pages** runs `workerd` natively and
+  it works.
+- **Keys today (single-user):** `ANTHROPIC_API_KEY` is a Cloudflare Pages **Production secret**
+  (also lets the live model list load). Default model: **Claude Sonnet 4.5**.
+- **Keys at Stage 2 (multi-tenant):** each user's key stored **encrypted, server-side only, never
+  exposed to the browser** — the core security rule.
