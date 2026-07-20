@@ -50,3 +50,5 @@ docs/instructions/Roadmap.md
 # Keep AI-assistant context docs tracked despite the blanket *.md ignore above
 !CLAUDE.md
 !docs/BUILD_LOG.md
+!docs/PROJECT_HANDOFF.md
+!docs/ROADMAP.md
