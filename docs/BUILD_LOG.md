@@ -71,7 +71,23 @@ only the **streaming chat** path trips the emulator.
   other users.
 - **(a)** is the weakest as pure tweaks: doesn't remove the root cause.
 
+### Decision
+- ✅ **Michael chose Option (b): deploy to Cloudflare Pages.** Fastest fix (c) was
+  available but he opted straight for the durable, product-grade home.
+
+### Deployment plan (Cloudflare Pages, via Git integration)
+Repo is already Pages-ready (`wrangler.toml` with `pages_build_output_dir`,
+`functions/[[path]].ts`, `nodejs_compat` flag, `pnpm run deploy`). Expected steps:
+1. Cloudflare account (free tier is fine) + connect the GitHub repo
+   (`michaeleisner-source/bolt.diy`) as a Pages project via Git.
+2. Build config — build command `pnpm run build`, output dir `build/client`,
+   production branch (likely `main`). Pin Node version if the builder default causes issues.
+3. Set the `nodejs_compat` compatibility flag + secrets (`ANTHROPIC_API_KEY`) in the
+   Pages project.
+4. Deploy, then test a chat prompt on the `*.pages.dev` URL.
+5. Once verified: optionally attach a custom domain and decommission the Railway service.
+
 ### Status / next step
-- ⏳ **Awaiting Michael's choice** before making any change. No fix applied yet.
-- Docs `CLAUDE.md` + `docs/BUILD_LOG.md` created and committed on branch
+- ▶️ **In progress:** walking Michael through Cloudflare Pages setup, one step at a time.
+- Docs `CLAUDE.md` + `docs/BUILD_LOG.md` live on branch
   `claude/bolt-chat-request-railway-8t0y4x`.
