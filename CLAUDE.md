@@ -29,12 +29,15 @@ Lovable-style "describe it and it builds it" platform.
 - **AI:** Vercel AI SDK (`ai`, `@ai-sdk/*`). Chat streams Server-Sent Events (SSE) from
   the LLM back to the browser. Current model: **Anthropic Sonnet**. Keys are BYOK
   (entered in the UI and/or set as server env vars).
-- **Hosting:** **Railway**, running the prebuilt production image
-  `ghcr.io/stackblitz-labs/bolt.diy:latest`.
-  - Env: `RUNNING_IN_DOCKER=true`, `PORT=5173`, `ANTHROPIC_API_KEY` set & funded.
-- **How the production image starts the app:** `pnpm run dockerstart`, which runs
-  `wrangler pages dev ./build/client ...` — i.e. Cloudflare's **local dev emulator
-  (`workerd`)**, just bound to `0.0.0.0:5173`. This detail matters a lot (see below).
+- **Hosting (current):** **Cloudflare Pages** via **Git integration** — Cloudflare builds
+  and deploys automatically on every push to `main`. Live at **`bolt-diy-8bq.pages.dev`**.
+  - Build config: framework preset `None`, build command `pnpm run build`, output dir
+    `build/client`, build env var `NODE_VERSION=22`.
+  - `ANTHROPIC_API_KEY` is set as a **Production secret** in the Pages project (Settings →
+    Variables and Secrets). This is what makes the live model list load + chat work.
+- **Hosting (old, being retired):** Railway, running `ghcr.io/stackblitz-labs/bolt.diy:latest`
+  via `pnpm run dockerstart` → `wrangler pages dev` (the `workerd` emulator). That emulator
+  is what broke streaming chat; moving to real Cloudflare Pages fixed it.
 
 ## Key architecture facts worth remembering
 
@@ -51,16 +54,21 @@ Lovable-style "describe it and it builds it" platform.
   `--binding NAME=VALUE` flags for wrangler, so `ANTHROPIC_API_KEY` from Railway does
   reach the app. (Env plumbing is fine; the failure is the runtime, not a missing key.)
 
-## Current open problem (as of 2026-07-20)
+## Status (as of 2026-07-20): ✅ RESOLVED
 
-Chat prompts fail in the Railway deployment with:
-`ERROR Chat chat request failed Error: Custom error: internal error; reference = ...`
-Server logs otherwise look healthy (`Ready on http://0.0.0.0:5173`, only harmless
-"sideEffects" warnings). Working theory (confirmed plausible): the streaming AI request
-breaks because it runs through Cloudflare's `wrangler pages dev` / `workerd` emulator
-inside a plain Railway container instead of on Cloudflare's real network.
+The original bug — chat failing with `Custom error: internal error; reference = ...` — was
+the Railway/`workerd` emulator choking on the streaming AI request. **Fixed by moving to
+Cloudflare Pages** (where `workerd` runs natively). bolt.diy is now live at
+`bolt-diy-8bq.pages.dev` and chat builds apps successfully.
 
-See `docs/BUILD_LOG.md` for the running diagnosis, options, decisions, and next steps.
+Two smaller issues surfaced and were fixed during the first working chat: a **retired
+default Anthropic model** and the **API key needing to be server-side** (added as a Pages
+secret) so the live model list loads. See `docs/BUILD_LOG.md` for the full story.
+
+**Known nice-to-have (not blocking):** the app still *defaults* to a retired model
+(`DEFAULT_MODEL` in `app/utils/constants.ts`) and ships stale `staticModels` in
+`app/lib/modules/llm/providers/anthropic.ts`. Worth updating to current model IDs so
+first-load never errors — pending Michael's go-ahead.
 
 ## Working agreements / conventions
 

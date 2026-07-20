@@ -106,9 +106,42 @@ Repo is already Pages-ready (`wrangler.toml` with `pages_build_output_dir`,
   2. **Local `wrangler` deploy from Michael's own computer**: `wrangler login` (browser)
      then `pnpm run deploy`. No GitHub App needed; more terminal steps.
 
-### Status / next step
-- ⏳ **Awaiting Michael's choice** between Git integration (path 1) and local wrangler
-  deploy (path 2). Token he generated is unusable from this env; keep it for local
-  wrangler use or revoke it.
-- Docs `CLAUDE.md` + `docs/BUILD_LOG.md` live on branch
-  `claude/bolt-chat-request-railway-8t0y4x`.
+### 2026-07-20 (resolved) — ✅ Live on Cloudflare Pages, chat works
+- **Chosen path:** Cloudflare Pages via **Git integration** (Michael's pick).
+- **Deploy setup that worked:**
+  - Cleared the earlier "unable to install on GitHub account" error by removing/reinstalling
+    the Cloudflare Pages GitHub App on the personal account.
+  - Used the **Pages** create flow (not the Workers flow) →
+    `dash.cloudflare.com/<acct>/workers-and-pages/create/pages` → Import Git repo →
+    `michaeleisner-source/bolt.diy`.
+  - **Build settings:** Framework preset `None`; build command `pnpm run build`; build
+    output directory `build/client`; build env var `NODE_VERSION=22`.
+  - Result: deployed to **`bolt-diy-8bq.pages.dev`**. Auto-redeploys on push to `main`.
+- **Original bug confirmed fixed:** the `Custom error: internal error; reference = ...`
+  (workerd) no longer appears — that was purely the Railway/Wrangler emulator. On real
+  Cloudflare Pages the streaming chat runs fine.
+- **Two follow-on issues hit and fixed during first chat:**
+  1. `Custom error: model: claude-3-5-sonnet-20241022` — Anthropic **retired** that model
+     snapshot. The app's 3 built-in (static) models are all stale, and it defaults to a
+     retired one (`DEFAULT_MODEL = 'claude-3-5-sonnet-latest'` in `app/utils/constants.ts`).
+  2. The **live** model list wasn't loading (only 3–4 models shown), because the key was
+     only in the browser cookie, not on the server. **Fix:** added `ANTHROPIC_API_KEY` as a
+     **Production secret** in Cloudflare Pages (Settings → Variables and Secrets), then
+     **Retry deployment**. After that the real model list loaded, a current Sonnet was
+     selected, and prompts build successfully.
+
+### Environment / infrastructure notes learned
+- The assistant's build environment is **firewalled from Cloudflare** (`api.cloudflare.com`
+  *and* `*.pages.dev` return 403 CONNECT) and from `codeload.github.com`. So the assistant
+  cannot deploy, test the live site, or install GitHub-tarball deps from here. Deploys must
+  run on Cloudflare's own build servers (Git integration) — which is what we set up.
+
+### Open / next (nice-to-have, not blocking)
+- **Durable model fix (proposed):** update `DEFAULT_MODEL` + the Anthropic `staticModels`
+  list to current, non-retired model IDs so first-load never errors and future users don't
+  have to hand-pick a model. Waiting on Michael to confirm which current model he selected.
+- Consider decommissioning the old Railway service once he's happy with Cloudflare.
+
+### Status
+- ✅ **DONE:** bolt.diy is live on Cloudflare Pages and chat builds apps. Docs live on
+  branch `claude/bolt-chat-request-railway-8t0y4x`.
