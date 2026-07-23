@@ -4,6 +4,13 @@ Newest at top. Each entry: the decision, why, and any open question it leaves.
 
 ---
 
+### D-009 — Brand is "Levers"; domain levers.build (GoDaddy)
+Company name **Levers**; tagline **"We give you the keys."** (Archimedes: "give me a lever and I'll
+move the world" → you give everyone the lever). Domain **levers.build** purchased at **GoDaddy**.
+This replaces the "BoltKey"/placeholder name. Personal brand **MatisX** is kept separate from the
+company brand Levers. Going-forward registrar preference: GoDaddy; extension `.build`.
+**Open:** point `levers.build` at the platform (GoDaddy DNS CNAME → Cloudflare Pages custom domain).
+
 ### D-008 — Platform host is Cloudflare Pages, not Railway
 The Railway deploy used the prebuilt image `ghcr.io/stackblitz-labs/bolt.diy:latest`, which starts
 the app via `wrangler pages dev` — Cloudflare's **`workerd` emulator**. In a plain container that

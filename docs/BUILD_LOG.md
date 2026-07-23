@@ -14,6 +14,23 @@ Next up: ...
 
 ---
 
+## 2026-07-20 — New context from a parallel chat (Levers brand + migration goals)
+Michael brought a summary from another session. Key new facts + goals:
+- **Brand:** **Levers**; domain **levers.build** bought at GoDaddy; tagline "We give you the keys."
+  (See DECISIONS D-009.)
+- **His goals, in his words (non-technical, cost-driven):** leave Lovable (too expensive); **log in
+  from any computer and continue work**; keep vibe-coding like Lovable.
+- **Existing Lovable sites to migrate one-by-one:** `matishub.com`, `worththefee.com`,
+  `westfieldx.com`.
+- The parallel chat had started pointing `levers.build` → the bolt instance (GoDaddy DNS CNAME →
+  Cloudflare Pages custom domain) but didn't finish.
+- **Reframe for planning:** these are 3 distinct jobs — (1) the **builder** he logs into
+  (`levers.build` → bolt), (2) **"log in anywhere + continue"** = the accounts build (Stage 2,
+  Supabase), (3) **his existing finished sites** = a hosting move off Lovable (get code out → host
+  free on Cloudflare/Netlify → point domain), largely separate from the builder.
+- **Paused:** Stage 2 Supabase setup (Step 1) — waiting on Michael to pick the immediate priority
+  (connect levers.build / migrate a site / build login-anywhere).
+
 ## 2026-07-20 — Session 2 (summary)
 **Did:** Diagnosed the Railway streaming-chat bug (`Custom error: internal error; reference = ...`
 = Cloudflare's `workerd` emulator in a plain container). Moved the platform to **Cloudflare Pages**
